@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitlab-ci
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+.eggs
+dist
+*.egg
+
+# Virtual environments
+.venv
+venv
+env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment
+.env
+.env_*
+!.env_dev.example
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Devcontainer
+.devcontainer
+
+# Tests (если не нужны в образе)
+.pytest_cache
+.coverage
+htmlcov
+
+# Misc
+*.md
+!README.md
