@@ -1,0 +1,47 @@
+version: '3.7'
+services:
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx
+  #   ports:
+  #     - 8888:80
+  #   volumes:
+  #     - ./open_api:/usr/share/nginx/html
+  #   networks:
+  #     - structurizr_backend_network
+  structurizr_backend:
+    tty: true
+    container_name: structurizr_backend
+    volumes:
+      - .:/opt/structurizr_backend
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    ports:
+      - 8080:8080
+    env_file: ".env_dev"
+    networks:
+      - structurizr_backend_network
+
+  # grafana-01:
+  #   image: grafana/grafana
+  #   container_name: grafana-01
+  #   ports:
+  #     - 3000:3000
+  #   networks:
+  #     - structurizr_backend_network
+  
+  # prometheus-01:
+  #   image: prom/prometheus
+  #   container_name: prometheus-01
+  #   ports:
+  #     - 9090:9090
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - structurizr_backend_network
+         
+networks:
+  structurizr_backend_network:
+    driver: "bridge"
+    external: false

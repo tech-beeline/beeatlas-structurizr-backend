@@ -1,0 +1,42 @@
+FROM python:3.11-slim
+
+COPY --from=eclipse-temurin:21-jdk /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
+ENV LANG=C.UTF-8
+ENV PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN update-alternatives --install /usr/bin/java java /opt/java/openjdk/bin/java 1
+RUN /opt/java/openjdk/bin/java --version
+RUN apt-get update; apt-get install -y --no-install-recommends wrk bzip2 curl unzip xz-utils binutils fontconfig libfreetype6 ca-certificates p11-kit git wget unzip graphviz graphviz-dev python3-dev build-essential; rm -rf /var/lib/apt/lists/*
+# Копируем необходимые файлы Java в рабочую директорию
+
+RUN wget https://hashicorp-releases.yandexcloud.net/terraform/1.10.5/terraform_1.10.5_linux_arm64.zip && \
+    unzip terraform_1.10.5_linux_arm64.zip && \
+    mv terraform /usr/local/bin/
+
+
+RUN set -eux; { echo '#!/usr/bin/env bash'; echo 'set -Eeuo pipefail'; echo 'trust extract --overwrite --format=java-cacerts --filter=ca-anchors --purpose=server-auth "$JAVA_HOME/lib/security/cacerts"'; } > /etc/ca-certificates/update.d/docker-openjdk; chmod +x /etc/ca-certificates/update.d/docker-openjdk; /etc/ca-certificates/update.d/docker-openjdk; find "$JAVA_HOME/lib" -name '*.so' -exec dirname '{}' ';' | sort -u > /etc/ld.so.conf.d/docker-openjdk.conf; ldconfig; java -Xshare:dump; rm -rf ~/.java;
+
+
+ADD . /opt/structurizr_backend
+
+COPY certs/*.crt /usr/local/share/ca-certificates
+RUN keytool -importcert -file /opt/structurizr_backend/certs/Vimpelcom_InternalCA_G2.crt -alias Vimpelcom_InternalCA_G2 -storepass changeit -noprompt -trustcacerts  -cacerts
+RUN keytool -importcert -file /opt/structurizr_backend/certs/Vimpelcom_RootCA_G2.crt -alias Vimpelcom_RootCA_G2 -storepass changeit -noprompt -trustcacerts -cacerts
+RUN keytool -importcert -file /opt/structurizr_backend/certs/apps.yd-m6-kt22.vimpelcom.ru.crt -alias apps.yd-m6-kt22.vimpelcom.ru -storepass changeit -noprompt -trustcacerts -cacerts
+RUN keytool -importcert -file /opt/structurizr_backend/certs/vega.vimpelcom.ru.crt -alias vega.vimpelcom.ru -storepass changeit -noprompt -trustcacerts -cacerts
+
+
+RUN mkdir -p /usr/local/structurizr-cli
+COPY build /usr/local/structurizr-cli
+RUN chmod +x /usr/local/structurizr-cli/structurizr.sh
+   
+RUN python -m pip install -r /opt/structurizr_backend/requirements/base.txt
+
+USER root
+RUN update-ca-certificates
+
+WORKDIR /opt/structurizr_backend
+#CMD [ "python", "/opt/structurizr_backend/src/main.py" ]
+ENTRYPOINT ["/usr/bin/bash"]
+
+
