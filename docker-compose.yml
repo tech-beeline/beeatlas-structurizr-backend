@@ -16,7 +16,7 @@ services:
       - .:/opt/structurizr_backend
     build:
       context: .
-      dockerfile: Dockerfile.test
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     env_file: ".env_dev"
