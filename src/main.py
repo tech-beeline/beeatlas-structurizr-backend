@@ -123,6 +123,7 @@ async def validation_exception_handler(
     Returns:
         JSONResponse: Ответ с ошибкой валидации
     """
+    print(exc)
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": "Some of parameters is empty or missing"},
