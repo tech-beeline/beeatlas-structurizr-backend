@@ -27,6 +27,7 @@ from structurizr_utils.functions.patterns import check_patterns
 from structurizr_utils.utils.utils import get_workspace_cmdb
 from structurizr import url_onpremises_base
 from . import log_endpoint_call, log_key_milestone, log_error_with_details, log_function_entry, log_function_exit
+from routers.utils import DSLWorkspace, convert_dsl2json, decode_base64, ValidationError, ErrorDetail
 
 router = APIRouter()
 
@@ -281,6 +282,205 @@ def upload_workspace_fdm(docId: int):
         raise HTTPException(status_code=400, detail=f"Error validating workspace")
 
     return JSONResponse(status_code=201, content={"details": "Ok"})
+
+
+# Отправка DSL в FDM с проверкой локальных фитнес-функций
+
+@router.post(
+    "/api/v1/dsl2fdm",
+    response_model=Dict,
+    responses={
+        201: {
+            "description": "Проверки выполнены успешно",
+            "content": {
+                "application/json": {
+                    "example": {"details": "Ok"}
+                }
+            }
+        },
+        400: {
+            "description": "Ошибка валидации workspace",
+            "model": ErrorDetail,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Can't find CMDB code in workspace"}
+                }
+            }
+        },
+        404: {
+            "description": "Документ или продукт не найден",
+            "model": ErrorDetail,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Product with code PRODUCT_CODE not found in BeeAtlas"}
+                }
+            }
+        },
+        503: {
+            "description": "Ошибка сервиса документов",
+            "model": ErrorDetail,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Error calling document service"}
+                }
+            }
+        }
+    }
+)
+@log_endpoint_call
+def dsl2fdm(dsl_workspace : DSLWorkspace):
+    # check if workspace exist
+    log_key_milestone("Check DSL existance")
+    if dsl_workspace is None:
+        raise HTTPException(status_code=400, detail={"valid": "false","error" : "Передан пустой запрос"})
+    
+    # check if workspace key exists and not None
+    log_key_milestone("Check Workspace in DSL")
+    if "workspace" not in dsl_workspace or dsl_workspace["workspace"] is None:
+        raise HTTPException(status_code=400, detail={"valid": "false","error" : "Передан пустой workspace"})
+
+    log_key_milestone("Check DSL Empty")
+    if len(dsl_workspace["workspace"].strip())==0:
+        raise HTTPException(status_code=400, detail={"valid": "false","error" : "Передан пустой workspace"})
+
+    # check if workspace base64 encoded
+    log_key_milestone("Decoding base64 encoded workspace")
+    dsl_workspace_decoded = decode_base64(dsl_workspace["workspace"],"utf-8", False)
+
+    if dsl_workspace_decoded == None:
+        raise HTTPException(status_code=400, detail={"valid": "false","error" : "Переданная строка не является base64 закодированной UTF-8 строкой"})
+
+    data_result = convert_dsl2json(dsl = dsl_workspace_decoded)
+
+    if data_result.get("errors"):
+        raise HTTPException(status_code=400, detail={"valid": "false","error" : data_result.get("errors")})
+
+    data = data_result.get("json")
+    # get cmdb_code from document
+    log_key_milestone("Extracting CMDB code from document")
+    try:
+        cmdb = get_workspace_cmdb(data)
+        if cmdb is None or cmdb=="":
+            raise HTTPException(status_code=400, detail=f"Can't find CMDB code in workspace.json")
+    except Exception as ex:
+        raise HTTPException(status_code=400, detail=f"Wrong json structure {ex}")
+
+    log_key_milestone(f"Loading product {cmdb}")
+    product_beeatlas = get_product(cmdb)
+    if product_beeatlas is None:
+        raise HTTPException(status_code=404, detail=f"Product with code {cmdb} not found in BeeAtlas")
+    
+    if product_beeatlas.structurizrApiUrl is None:
+        raise HTTPException(status_code=404, detail=f"Product with code {cmdb} not have structurizrApiUrl")
+
+    log_key_milestone(f"Starting fitness check for {cmdb}")
+    result = list()
+    url_sparx = os.getenv("URL_SPARX",None)
+    product_id = product_beeatlas.id
+
+    if url_sparx:
+        url_sparx = url_sparx.rstrip("/")
+
+    try:
+        share_url = product_beeatlas.structurizrApiUrl
+        result.extend(safe_execution(check_context,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_capability,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_technology,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_sequences,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_deployment,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_container,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_adr,cmdb,data,url_sparx,share_url, True,product_id))
+        result.extend(safe_execution(check_api,cmdb,data,url_sparx,share_url, True,False,product_id))
+        result.extend(safe_execution(check_patterns, cmdb, data, url_sparx, share_url, True,product_id))
+    except Exception as e:
+        log_error_with_details(e, "fitness_check_execution", {"cmdb": cmdb, "docId": docId})
+        raise HTTPException(status_code=400, detail=f"Error validating workspace")
+
+    if result:
+        log_key_milestone(f'Dashboard::Отправляем {len(result)} результатов проверок в backend для CMDB: {cmdb}')
+        
+        try: 
+            for f in result:
+                gmt_plus_3 = timezone(timedelta(hours=3))
+                current_time = datetime.now(gmt_plus_3)
+                status = 0
+                if not f["isCheck"]:
+                    status = 404
+
+                assesment_data = {
+                    "system_code": cmdb,
+                    "fitness_function_code": f["code"],
+                    "assessment_date": current_time.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                    "assessment_description": f["assessmentDescription"],
+                    "status": status,
+                    "result_details": f["resultDetails"]
+                    }
+                # Формирование URL для отправки результатов
+                url: str = f"{url_sparx}/api/v4/systems/{cmdb}/assessments"
+                headers: Dict[str, str] = {
+                    'content-type': 'application/json',
+                    'accept': 'application/json'
+                }
+                json_request: str = json.dumps(assesment_data, ensure_ascii=False)
+                response: requests.Response = requests.post(
+                    url, 
+                    data=json_request.encode('utf-8'), 
+                    headers=headers, 
+                    verify=False
+                )
+                
+                if response.status_code == 200:
+                    log_key_milestone(f'Результат ff {f["code"]} отправлен: {response.status_code} {response.reason}')
+                else:
+                    log_key_milestone(f'Ошибка при отправке результата в URL: {url}')
+                    log_key_milestone(f'Ответ сервера: {response.status_code} {response.reason}')
+                    log_key_milestone(f'Текст ответа: {response.text}')
+                    log_key_milestone(f'Тело запроса: {json_request}')
+                    
+        except Exception as ex:
+            log_error_with_details(ex, "fitness_check_service_posting", {"cmdb": cmdb})
+
+        # Основной способ отправки через FitnessFunctionClient 
+        try:
+            ffclient = FitnessFunctionClient()
+            res = list()
+            log_key_milestone(f"Posting fitness check to new service {cmdb}")
+            for f in result:
+                new_assessment_objects = []               
+                for assessment_object in f["assessmentObjects"]:
+                    
+                    for detail in assessment_object["details"]:
+                        new_details = assessment_object.copy()
+                        new_details["details"] = []
+                        for key, value in detail.items():
+                            new_details["details"].append({
+                                "key": "name",
+                                "value": key
+                            })
+                            new_details["details"].append({
+                                "key": "value",
+                                "value": value
+                            })
+                        assessment_object = new_details.copy()
+                        new_assessment_objects.append(assessment_object)
+                
+                res.append({"code": f["code"],
+                            "isCheck": f["isCheck"],
+                            "assessmentDescription": f["assessmentDescription"],
+                            "assessmentObjects": new_assessment_objects,
+                            "resultDetails": f["resultDetails"]})
+
+            ffclient.post_fitness_functions(cmdb=cmdb,
+                                            source_type="pipeline",
+                                            requests=res,
+                                            source_id=pipelineId)
+            log_key_milestone(f'Результаты отправлены в product backend для CMDB: {cmdb}')
+        except Exception as ex:
+            log_key_milestone(f'Body: {json.dumps(res, ensure_ascii=False)}')
+            log_error_with_details(ex, "fitness_check_service_posting", {"cmdb": cmdb})
+            
+    return JSONResponse(status_code=201, content={"details": "Ok"})
+    
 
 # Проверка fitness-функций для документа
 @router.post(
