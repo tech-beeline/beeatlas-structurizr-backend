@@ -471,9 +471,9 @@ def dsl2fdm(dsl_workspace : DSLWorkspace):
                             "resultDetails": f["resultDetails"]})
 
             ffclient.post_fitness_functions(cmdb=cmdb,
-                                            source_type="pipeline",
+                                            source_type="script",
                                             requests=res,
-                                            source_id=pipelineId)
+                                            source_id=None)
             log_key_milestone(f'Результаты отправлены в product backend для CMDB: {cmdb}')
         except Exception as ex:
             log_key_milestone(f'Body: {json.dumps(res, ensure_ascii=False)}')
