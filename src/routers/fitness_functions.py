@@ -393,9 +393,28 @@ def dsl2fdm(dsl_workspace : DSLWorkspace):
         result.extend(safe_execution(check_api,cmdb,data,url_sparx,share_url, True,False,product_id))
         result.extend(safe_execution(check_patterns, cmdb, data, url_sparx, share_url, True,product_id))
     except Exception as e:
-        log_error_with_details(e, "fitness_check_execution", {"cmdb": cmdb, "docId": docId})
+        log_error_with_details(e, "fitness_check_execution", {"cmdb": cmdb})
         raise HTTPException(status_code=400, detail=f"Error validating workspace")
+    
+    try:
+        id = product_beeatlas.structurizrApiUrl.split('/')[-1]
+        log_key_milestone(f"Extracted workspace ID: {id}")
 
+        log_key_milestone("Publishing JSON workspace to Structurizr")
+        if not publish_json_workspace(cmdb= product_beeatlas.alias,
+                               workspace_id=int(id), 
+                               structurizrApiKey = product_beeatlas.structurizrApiKey,
+                               structurizrApiSecret = product_beeatlas.structurizrApiSecret,
+                               product_json=data):
+            return JSONResponse(status_code=409, content={"details": f"Error publish to Structurizr OnPremises {url_onpremises_base}","workspace_id":id})
+        
+        log_key_milestone("Workspace published successfully")
+        return JSONResponse(status_code=201, content={"details": "Ok","workspace_id":id})
+        
+    except Exception as e:
+        log_error_with_details(e, "workspace_publications", {"key": product_beeatlas.structurizrApiKey, "cmdb": cmdb, "workspace_id": id})
+        raise HTTPException(status_code=400, detail=f"Error publish workspace to structurizr")
+        
     if result:
         log_key_milestone(f'Dashboard::Отправляем {len(result)} результатов проверок в backend для CMDB: {cmdb}')
         
