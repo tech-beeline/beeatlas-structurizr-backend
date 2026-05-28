@@ -1,0 +1,58 @@
+f9787d3 Fri Mar 6 21:18:22 2026 +0600 Open source version
+
+ .devcontainer/devcontainer.json                    |   22 [32m+[m
+ .dockerignore                                      |   47 [32m+[m
+ .env                                               |   15 [32m+[m
+ .gitignore                                         |  119 [32m++[m
+ Dockerfile                                         |   46 [32m+[m
+ Dockerfile.test                                    |   57 [32m+[m
+ Dockerfile.test.old                                |   42 [32m+[m
+ LICENSE                                            |  201 [32m+++[m
+ README.md                                          |  575 [32m+++++++[m
+ docker-compose.yml                                 |   47 [32m+[m
+ requirements/base.txt                              |   17 [32m+[m
+ src/main.py                                        |  186 [32m+++[m
+ src/routers/__init__.py                            |  117 [32m++[m
+ src/routers/fitness_functions.py                   |  479 [32m++++++[m
+ src/routers/integraion.py                          |  159 [32m++[m
+ src/routers/terraform.py                           |  509 [32m++++++[m
+ src/routers/workspace.py                           |  529 [32m+++++++[m
+ src/structurizr.py                                 |  167 [32m++[m
+ src/structurizr_utils/__init__.py                  |    0
+ src/structurizr_utils/functions/README.md          |  333 [32m++++[m
+ src/structurizr_utils/functions/__init__.py        |    0
+ src/structurizr_utils/functions/adr.py             |   86 [32m+[m
+ src/structurizr_utils/functions/api.py             |  832 [32m++++++++++[m
+ .../functions/beeatlas_objects.py                  |  170 [32m++[m
+ src/structurizr_utils/functions/capability.py      |  614 [32m++++++++[m
+ src/structurizr_utils/functions/container.py       |  395 [32m+++++[m
+ src/structurizr_utils/functions/context.py         |  189 [32m+++[m
+ src/structurizr_utils/functions/deployment.py      |  232 [32m+++[m
+ src/structurizr_utils/functions/graph.py           |  101 [32m++[m
+ src/structurizr_utils/functions/objects.py         |   63 [32m+[m
+ src/structurizr_utils/functions/patterns.py        |   91 [32m++[m
+ src/structurizr_utils/functions/sequences.py       |  324 [32m++++[m
+ src/structurizr_utils/functions/technology.py      |  594 [32m+++++++[m
+ src/structurizr_utils/models/README.md             |  430 [32m+++++[m
+ src/structurizr_utils/models/__init__.py           |   22 [32m+[m
+ .../models/model_arch_patterns.py                  |   25 [32m+[m
+ src/structurizr_utils/models/model_camunda.py      |   56 [32m+[m
+ src/structurizr_utils/models/model_capability.py   | 1653 [32m++++++++++++++++++++[m
+ src/structurizr_utils/models/model_documents.py    |   90 [32m++[m
+ src/structurizr_utils/models/model_graph.py        |  479 [32m++++++[m
+ .../models/model_observability.py                  |   42 [32m+[m
+ .../models/model_rule_compiler.py                  |   19 [32m+[m
+ .../models/model_system_service.py                 |  537 [32m+++++++[m
+ src/structurizr_utils/models/model_techradar.py    |  498 [32m++++++[m
+ src/structurizr_utils/models/model_terraform.py    |  253 [32m+++[m
+ src/structurizr_utils/models/model_vega_vps.py     |  249 [32m+++[m
+ src/structurizr_utils/models/models_product.py     |  855 [32m++++++++++[m
+ src/structurizr_utils/models/models_workspace.py   |   15 [32m+[m
+ src/structurizr_utils/readme.md                    |  431 [32m+++++[m
+ src/structurizr_utils/utils/README.md              |  271 [32m++++[m
+ src/structurizr_utils/utils/__init__.py            |    0
+ src/structurizr_utils/utils/structurizr.py         |  132 [32m++[m
+ src/structurizr_utils/utils/utils.py               |  110 [32m++[m
+ templates/terraform/main.jinja                     |   85 [32m+[m
+ templates/workspace.dsl                            |   37 [32m+[m
+ 55 files changed, 13647 insertions(+)

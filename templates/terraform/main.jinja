@@ -1,0 +1,85 @@
+terraform {
+  required_providers {
+    vega = {
+      version = "~> 0.00.15"
+      source  = "vega.vimpelcom.ru/vimpelcom/vega"
+    }
+  }
+}
+
+provider "vega" {
+  url     = "https://vega.vimpelcom.ru"
+  token   = "{{ token }}"
+  project = "{{ project }}"
+}
+
+{% if resources.resources is not none %}
+  {% for item in resources.resources %}
+    {% if item.resource_type == "vm" %}
+resource "vega_server" "{{ item.name }}" {
+  additional_volume_ids = []
+  name   = "{{ item.name }}"
+  flavor { id = "{{ item.flavor_id }}" }
+  image  { id = "{{ item.image_id }}" }
+  region { id = "{{ item.region_id }}" }
+  root_volume {
+    size = {{ item.volume_size }}
+    type = "{{ item.volume_type }}"
+  }
+}
+
+output "{{ item.name }}_public_ip" {
+  value = vega_server.{{ item.name }}.addresses[0].address
+}
+    {% elif item.resource_type == "kafka" %}
+resource "vega_kafka_cluster" "{{ item.name }}" {
+  flavor              = "{{ item.flavor }}"
+  name                = "{{ item.name }}"
+  size                = "{{ item.size }}"
+  num_partitions      = "{{ item.num_partitions }}"
+  replication_factor  = "{{ item.replication_factor }}"
+  log_retention_hours = "{{ item.log_retention_hours }}"
+  log_retention_bytes = "{{ item.log_retention_bytes }}"
+  volume_size         = "{{ item.volume_size }}"
+}
+
+      {% for topic_name in item.topic_names %}
+resource "vega_kafka_topic" "{{ topic_name }}" {
+  name               = "{{ topic_name }}"
+  cluster_id         = "${vega_kafka_cluster.{{ item.name }}.id}"
+  num_partitions     = "{{ item.num_partitions }}"
+  replication_factor = "{{ item.replication_factor }}"
+}
+      {% endfor %}
+    {% elif item.resource_type == "mongodb" %}
+resource "vega_mongodb" "{{ item.name }}" {
+  name                    = "{{ item.name }}"
+  flavor                  = "{{ item.flavor }}"
+  volume_size             = "{{ item.volume_size }}"
+  volume_type             = "{{ item.volume_type }}"
+  backup_strategies       = "{{ item.backup_strategies }}"
+  deployment_configuration = "{{ item.deployment_configuration }}"
+}
+    {% elif item.resource_type == "redis" %}
+resource "vega_redis" "{{ item.name }}" {
+  name        = "{{ item.name }}"
+  flavor      = "{{ item.flavor }}"
+  version     = "{{ item.version }}"
+  volume_size = "{{ item.volume_size }}"
+  volume_type = "{{ item.volume_type }}"
+}
+    {% elif item.resource_type == "postgresql" %}
+resource "vega_postgresql" "{{ item.name }}" {
+  name                    = "{{ item.name }}"
+  flavor                  = "{{ item.flavor }}"
+  volume_size             = "{{ item.volume_size }}"
+  version                 = "{{ item.version }}"
+  backup_strategies       = "{{ item.backup_strategies }}"
+  deployment_configuration = "{{ item.deployment_configuration }}"
+}
+    {% else %}
+resource "{{ item.resource_type }}" "{{ item.name }}" {
+  {% for key, value in item.resource_params.items() %}{{ key }} = "{{ value }}"
+  {% endfor %}}{% endif %}
+{% endfor %}
+{% endif %}

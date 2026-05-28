@@ -1,0 +1,22 @@
+{
+	"name": "Structurizr Backend",
+	"build": {
+		"dockerfile": "../Dockerfile.test",
+		"context": ".."
+	},
+	"workspaceFolder": "/opt/structurizr_backend",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/opt/structurizr_backend,type=bind",
+	"runArgs": [
+		"-p", "8080:8080",
+		"--env-file", "${localWorkspaceFolder}/.env_dev"
+	],
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance"
+			]
+		}
+	}
+}
