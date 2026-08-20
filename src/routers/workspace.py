@@ -1,5 +1,6 @@
 # Copyright (c) 2024 PJSC VimpelCom
 import os
+import subprocess
 import warnings
 import tempfile
 
@@ -44,20 +45,30 @@ def publish_default_workspace(workspace_id : int, architect_name : str, product 
         with open(filename,'w') as f:
             f.write(str(workspace_template.render( {'product': product, "architect_name" : architect_name})))
 
-        command  = "/usr/local/structurizr-cli/structurizr.sh "
-        command += "push -url " +url_onpremises_base+" "
-        command += "-id "+ str(workspace_id) + " "
-        command += "-key "+product.structurizrApiKey+" "
-        command += "-secret "+product.structurizrApiSecret+" "
-        command += "-workspace "+filename
-        
         log_key_milestone(f"Executing CLI command for workspace {workspace_id}")
         
-        if os.system(command) == 0:
+        # Use subprocess.run with argument list to avoid shell word-splitting on spaces
+        command = [
+            "/usr/local/structurizr-cli/structurizr.sh",
+            "push",
+            "-url", url_onpremises_base,
+            "-id", str(workspace_id),
+            "-key", product.structurizrApiKey,
+            "-secret", product.structurizrApiSecret,
+            "-workspace", filename
+        ]
+        
+        proc = subprocess.run(command, capture_output=True, text=True)
+        
+        if proc.returncode == 0:
             log_function_exit("publish_default_workspace", result=True)
             return True
         else:
-            log_key_milestone(f"CLI command failed for workspace {workspace_id}", level="error")
+            log_key_milestone(f"CLI command failed for workspace {workspace_id} (rc={proc.returncode})", level="error")
+            if proc.stdout:
+                log_key_milestone(f"CLI stdout: {proc.stdout.strip()}")
+            if proc.stderr:
+                log_key_milestone(f"CLI stderr: {proc.stderr.strip()}")
             log_function_exit("publish_default_workspace", result=False)
             return False
     except Exception as e:
@@ -221,7 +232,7 @@ def convert2doc_workspace(dsl_workspace : DSLWorkspace) -> Dict:
     # upload to doc service
 
     try:
-        log_key_milestone(f"Uploading workspace.json to {os.getenv('URL_DOCUMENTS','https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru')}")
+        log_key_milestone(f"Uploading workspace.json to {os.getenv('URL_DOCUMENTS')}")
         doc_id = upload_workspace_json(result.get("json"))
         return {"doc_id" : doc_id }
     except Exception as ex:

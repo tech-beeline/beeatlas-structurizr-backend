@@ -2,13 +2,13 @@ terraform {
   required_providers {
     vega = {
       version = "~> 0.00.15"
-      source  = "vega.vimpelcom.ru/vimpelcom/vega"
+      source  = "{{ vega_provider_source }}"
     }
   }
 }
 
 provider "vega" {
-  url     = "https://vega.vimpelcom.ru"
+  url     = "{{ vega_url }}"
   token   = "{{ token }}"
   project = "{{ project }}"
 }

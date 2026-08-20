@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Set
 
 from src_fitness_functions.beeatlas_api import get_beeatlas_api
 
@@ -67,9 +67,9 @@ def get_cached_techradar_catalog() -> Tuple[List[Dict[str, Any]], List[Dict[str,
         return techs, product_tech
 
 
-def get_cached_infrastructure_labels() -> List[str]:
+def get_cached_infrastructure_labels() -> Set[str]:
     """Метки технологий инфраструктурных секторов (из кешированного ``/api/v1/tech``)."""
-    labels: List[str] = []
+    labels: Set[str] = set()
     for item in get_cached_techradar_catalog()[0]:
         if not isinstance(item, dict):
             continue
@@ -79,5 +79,5 @@ def get_cached_infrastructure_labels() -> List[str]:
             continue
         label = str(item.get("label", "") or "").lower().strip()
         if label:
-            labels.append(label)
+            labels.add(label)
     return labels

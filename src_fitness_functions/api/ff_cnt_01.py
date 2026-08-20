@@ -31,11 +31,6 @@ class Cnt01Detail(BaseModel):
         default="",
         description="Technology контейнера (поле technology в workspace)",
     )
-    tags: List[str] = Field(
-        default_factory=list,
-        description="Теги контейнера (поле tags в workspace)",
-    )
-
 
 class Cnt01Response(BaseModel):
     """Тело ответа эндпоинта CNT.01 в формате, ожидаемом FF Manager."""

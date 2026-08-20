@@ -18,18 +18,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["/api/v1/ff/cpb01"])
 
 
-def _parents_from_payload(raw: Any) -> List[Dict[str, str]]:
+def _parents_from_payload(raw: Any) -> List[str]:
     """Нормализация родителей TC: список объектов с полем ``code``."""
     if not isinstance(raw, list):
         return []
-    out: List[Dict[str, str]] = []
+    out: List[str] = []
     for p in raw:
         if isinstance(p, dict):
             c = p.get("code")
             if c is not None and str(c).strip():
-                out.append({"code": str(c).strip()})
+                out.append( str(c).strip())
         elif isinstance(p, str) and p.strip():
-            out.append({"code": p.strip()})
+            out.append(p.strip())
     return out
 
 
@@ -44,8 +44,7 @@ class Cpb01Detail(BaseModel):
     code: str = Field(..., description="Код объекта проверки")
     name: str = Field(..., description="Наименование")
     source: str = Field(..., description="Источник данных: Landscape, Structurizr и т.п.")
-    parents: List[Dict[str, str]] = Field(
-        default_factory=list,
+    parents: str = Field(...,
         description="Родительские возможности (элементы с полем code)",
     )
     check: bool = Field(..., description="Результат проверки")
@@ -119,7 +118,7 @@ async def cpb01_check(
                     code=str(item.get("code", "")),
                     name=str(item.get("name", "")),
                     source="Landscape",
-                    parents=_parents_from_payload(item.get("parents")),
+                    parents=str(_parents_from_payload(item.get("parents"))),
                     check=True,
                 )
             )
@@ -130,7 +129,7 @@ async def cpb01_check(
                     code=full_code,
                     name=tc.name,
                     source="Structurizr",
-                    parents=[{"code": str(p.get("code", "")).strip()} for p in tc.parents if str(p.get("code", "")).strip()],
+                    parents=str([str(p.get("code", "")).strip() for p in tc.parents if str(p.get("code", "")).strip()]),
                     check=True,
                 )
             )

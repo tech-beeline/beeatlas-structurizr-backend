@@ -23,6 +23,10 @@ import os
 # Настройка логгера для модуля
 logger = logging.getLogger(__name__)
 
+URL_BEEATLAS = os.getenv("URL_BEEATLAS")
+URL_TCQUALITY = os.getenv("URL_TCQUALITY")
+
+
 def publish_capabilities_sparx(cmdb: str, found_capabilities: List[TechnicalCapability], backend_url: str) -> None:
     """
     Публикует найденные технические возможности в backend систему.
@@ -97,33 +101,34 @@ def load_capabilities_sparx(cmdb: str, backend_url: str) -> SystemPurpose:
 
 
 def publish_capabilities(cmdb: str, found_capabilities: List[TechnicalCapability]) -> None:
-    try:
+   
         client = CapabilityClient()
         
 
         for cap in found_capabilities:
-            dto  = PutTechCapabilityDTO()
-            dto["author"]       = cap.author
-            dto["code"]         = f"{cmdb}.{cap.code}"
-            dto["description"]  = cap.description
-            dto["name"]         = cap.name
-            dto["owner"]        = cap.owner
-            dto["status"]       = cap.status
-            dto['targetSystemCode'] = cmdb
+            try:
+                dto  = PutTechCapabilityDTO()
+                dto["author"]       = cap.author
+                dto["code"]         = f"{cmdb}.{cap.code}"
+                dto["description"]  = cap.description
+                dto["name"]         = cap.name
+                dto["owner"]        = cap.owner
+                dto["status"]       = cap.status
+                dto['targetSystemCode'] = cmdb
 
-            dto["parents"] = []
-            for pi in cap.parents:
-                dto["parents"].append(pi['code'])
-            
-            logging.info(f"Публикую TC :[{dto}]")
-            client.put_tech_capability(techCapability=dto,source="structurizr")
+                dto["parents"] = []
+                for pi in cap.parents:
+                    dto["parents"].append(pi['code'])
+                
+                logging.info(f"Публикую TC :[{dto}]")
+                client.put_tech_capability(techCapability=dto,source="structurizr")
+       
+            except requests.RequestException as e:
+                logger.error(f'Ошибка HTTP запроса при загрузке capabilities: {e}')
+            except Exception as e:
+                logger.error(f'Ошибка при обработке ответа: {e}')
 
-            
-    except requests.RequestException as e:
-        logger.error(f'Ошибка HTTP запроса при загрузке capabilities: {e}')
-    except Exception as e:
-        logger.error(f'Ошибка при обработке ответа: {e}')
-    return 
+        return 
 
 def load_capabilities(product_id : int) -> List[ResponsibilityCapabilityDTO]:
     try:
@@ -275,8 +280,8 @@ def check_capability(cmdb: str, data: Dict[str, Any], backend_url: str,
                         
                         # Заполнение данных для assessment
                         capability_name = component.get('name', f'Capability {component_code}')
-                        # found_objects_cpb01.append({f"{cmdb}.{tc.code}": f"<a href='https://beeatlas.vimpelcom.ru/models/search?request={cmdb}.{tc.code}' target='_blank'>{capability_name}</a><br>"})
-                        found_objects_cpb03.append({f"{cmdb}.{tc.code}": f"<a href='https://beeatlas.vimpelcom.ru/models/search?request={cmdb}.{tc.code}' target='_blank'>{capability_name}</a><br>"})
+                        # found_objects_cpb01.append({f"{cmdb}.{tc.code}": f"<a href='{URL_BEEATLAS}/models/search?request={cmdb}.{tc.code}' target='_blank'>{capability_name}</a><br>"})
+                        found_objects_cpb03.append({f"{cmdb}.{tc.code}": f"<a href='{URL_BEEATLAS}/models/search?request={cmdb}.{tc.code}' target='_blank'>{capability_name}</a><br>"})
                 
                 # Отслеживание контейнеров с capability компонентами
                 if has_capability_component:
@@ -312,7 +317,7 @@ def check_capability(cmdb: str, data: Dict[str, Any], backend_url: str,
     for cpb in  load_capabilities(product_id=product_id):
         have_published_capability = True
         found_capability = True
-        found_objects_cpb01.append({f"{cpb['code']}": f"<a href='https://beeatlas.vimpelcom.ru/models/search?request={cpb['code']}' target='_blank'>{cpb['name']}</a><br>"})
+        found_objects_cpb01.append({f"{cpb['code']}": f"<a href='{URL_BEEATLAS}/models/search?request={cpb['code']}' target='_blank'>{cpb['name']}</a><br>"})
 
 
 
@@ -544,15 +549,15 @@ def check_cpb05(cmdb: str) -> List[FitnessStatus]:
 
             isCheck = True
             descr = ''
-            
+
             if marks[0]+ marks[1] + marks[2] > 0:  # считаем что проверка не пройдена если есть tc c оценкой 0-2
                 descr = (f"Описание возможностей не соответствует методике "
-                         f"(см. <a href='https://ms-seaapp001.bee.vimpelcom.ru:83/tcquality.php?cmdb={cmdb}'>детали</a>). " )
+                         f"(см. <a href='{URL_TCQUALITY}/tcquality.php?cmdb={cmdb}'>детали</a>). " )
                 isCheck = False
 
             else:
                 descr = (f"Описание в целом соответствует методике "
-                         f"(см. <a href='https://ms-seaapp001.bee.vimpelcom.ru:83/tcquality.php?cmdb={cmdb}'>детали</a>).")
+                         f"(см. <a href='{URL_TCQUALITY}/tcquality.php?cmdb={cmdb}'>детали</a>).")
                 
             result.append(FitnessStatus(
                             code=codeFF,

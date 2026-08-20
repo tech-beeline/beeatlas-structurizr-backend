@@ -5,6 +5,7 @@ import json
 import requests
 import tempfile
 import logging
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 from typing import Annotated, Literal, Optional
@@ -341,7 +342,15 @@ def generate_terraform_content(client: VegaVPSClient, environment : str, token :
         log_function_exit("generate_terraform_content")
         return None
 
-    content = main_template.render(token = token, resources = res, project = main_project)
+    vega_url = URL_VEGA or ""
+    vega_host = urlparse(vega_url).netloc or vega_url
+    content = main_template.render(
+        token=token,
+        resources=res,
+        project=main_project,
+        vega_url=vega_url,
+        vega_provider_source=f"{vega_host}/vimpelcom/vega",
+    )
     log_function_exit("generate_terraform_content")
     return content
 
@@ -396,7 +405,7 @@ class TerrafromRequest(BaseModel):
 @log_endpoint_call
 def get_terraform(docId: int, request: Annotated[TerrafromRequest,Query()]):
 
-    URL_VEGA = os.getenv("URL_VEGA","https://vega.vimpelcom.ru")
+    URL_VEGA = os.getenv("URL_VEGA")
 
     try:
         data = get_document(document_id=docId)
@@ -469,7 +478,7 @@ def get_terraform(docId: int, request: Annotated[TerrafromRequest,Query()]):
 async def get_terraform_by_json(environment : str = Query(..., description="Deployment Environment"), 
                           token : str = Header(..., alias="X-Token"),# Query(..., description="Vega token"), 
                           text_content: str = Body(..., media_type="text/plain")):
-    URL_VEGA = os.getenv("URL_VEGA","https://vega.vimpelcom.ru")
+    URL_VEGA = os.getenv("URL_VEGA")
     log_key_milestone("Starting get_terraform_by_json")
     try:
         log_key_milestone("Loading document from JSON content")

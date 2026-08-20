@@ -136,8 +136,8 @@ def _container_has_external_interface(
         dst = str(relationship.get("destinationId", ""))
         if src in external_system_ids and dst == cid:
             return True
-        if src == cid and dst in external_system_ids:
-            return True
+        # if src == cid and dst in external_system_ids:
+        #     return True
     return False
 
 
@@ -655,7 +655,7 @@ def cpb05_quality_from_db(cmdb: str) -> Tuple[bool, List[Dict[str, Any]]]:
 
     low = marks[0] + marks[1] + marks[2]
     is_ok = low == 0
-    link = f"https://ms-seaapp001.bee.vimpelcom.ru:83/tcquality.php?cmdb={cmdb_l}"
+    link = f"{os.getenv('URL_TCQUALITY')}/tcquality.php?cmdb={cmdb_l}"
     summary_name = (
         f"Описание возможностей не соответствует методике (см. {link})."
         if not is_ok

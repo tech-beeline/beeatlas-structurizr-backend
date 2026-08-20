@@ -5,6 +5,7 @@
 import hashlib
 import hmac
 import base64
+import secrets
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -82,7 +83,7 @@ class HMACAuth(AuthBase):
     def get_headers(self, method: str, path: str, body: str = "", content_type: str = "application/json") -> Dict[str, str]:
         """Получить заголовки для HMAC аутентификации"""
         # Генерируем уникальный nonce для предотвращения replay атак
-        nonce = "Q5FHK3Sj1FinGDQ7zouJC5X9Ypp9oj2ePK-J4YQ56Z4" #secrets.token_urlsafe(32)
+        nonce = secrets.token_urlsafe(32)
         
         # Строим сообщение для подписи
         message = self._build_message(method, path, body, content_type, nonce)

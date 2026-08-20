@@ -30,12 +30,11 @@ class Cpb02Detail(BaseModel):
     status: str = Field(..., description="Статус")
     check: bool = Field(..., description="Результат проверки")
     container_name: str = Field(default="", description="Имя контейнера")
-    technical_capability: List[str] = Field(
-        default_factory=list,
+    technical_capability: str = Field(...,
         description="Полные коды TC (CMDB.код) в контейнере",
     )
-    external_callers: List[str] = Field(
-        default_factory=list,
+    external_callers: str = Field(
+        ...,
         description="Внешний участник связи (один элемент — контрагент по связи)",
     )
 
@@ -54,8 +53,8 @@ def _cpb02_detail_from_rel(row: Cpb02RelationshipRow, *, check: bool) -> Cpb02De
         status="OK" if check else "FAIL",
         check=check,
         container_name=row.container_name,
-        technical_capability=list(row.technical_capability),
-        external_callers=[row.external_party] if row.external_party else [],
+        technical_capability=str(row.technical_capability),
+        external_callers=str([row.external_party] if row.external_party else []),
     )
 
 
@@ -122,8 +121,8 @@ async def cpb02_check(
                 status="OK",
                 check=True,
                 container_name="",
-                technical_capability=[],
-                external_callers=[],
+                technical_capability="",
+                external_callers="",
             )
         )
 

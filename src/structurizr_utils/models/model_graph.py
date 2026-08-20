@@ -65,8 +65,7 @@ class GraphService:
             url: URL сервиса (если не указан, берется из переменной окружения URL_GRAPH)
             token: Bearer токен для аутентификации (опционально)
         """
-        self.base_url = (url or os.getenv("URL_GRAPH") or 
-                        "https://architect-graph-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru").rstrip('/')
+        self.base_url = url or os.getenv("URL_GRAPH")
         self.session = requests.Session()
         self.session.verify = False  # Отключаем проверку сертификатов
         if token:

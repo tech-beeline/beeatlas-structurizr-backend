@@ -522,7 +522,7 @@ def check_api(cmdb: str, data: Dict[str, Any], backend_url: str,
                         pass
                         # example structurizr.dsl.identifier is my_system.gateway
                         # we need to extrace "gateway" part
-                        # api_errors.append({f"{container.get('name', None)}" : "нет <a href='https://docs.bw.vimpelcom.ru/workflow/ptr/3.6%20%D0%9D%D0%B5%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F/' target='_'>external_name</a> у контейнера"})
+                        # api_errors.append({f"{container.get('name', None)}" : "нет <a href='https://****/workflow/ptr/3.6%20%D0%9D%D0%B5%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F/' target='_'>external_name</a> у контейнера"})
                         # structurizr_identifier = container.get('properties', {}).get('structurizr.dsl.identifier', None)
                         # if structurizr_identifier:
                         #     structurizr_identifier = structurizr_identifier.split('.')[-1]
@@ -553,7 +553,7 @@ def check_api(cmdb: str, data: Dict[str, Any], backend_url: str,
                                 if beeatlas_container.code:
                                     beeatlas_interface.code = f"{external_name_interface}.{beeatlas_container.code}"
                                 else:
-                                    api_errors.append({f"{component.get('name', None)}" : "нет <a href='https://docs.bw.vimpelcom.ru/workflow/ptr/3.6%20%D0%9D%D0%B5%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F/' target='_'>external_name</a> у родительского контейнера"})
+                                    api_errors.append({f"{component.get('name', None)}": "нет external_name у родительского контейнера"})
                             else:
                                 # example structurizr.dsl.identifier is my_system.gateway
                                 # we need to extrace "gateway" part
@@ -561,7 +561,7 @@ def check_api(cmdb: str, data: Dict[str, Any], backend_url: str,
                                     beeatlas_interface.code = f"ext_{ component.get('name').lower().replace(' ','_').replace('   ','_').replace('.','_')}.{beeatlas_container.code}"
                                     api_errors.append({f"{component.get('name', None)}" : f"нет external_name у интерфейса, используем {beeatlas_interface.code}"})
                                 else:
-                                    api_errors.append({f"{component.get('name', None)}" : "нет <a href='https://docs.bw.vimpelcom.ru/workflow/ptr/3.6%20%D0%9D%D0%B5%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F/' target='_'>external_name</a> у интерфейса"})
+                                    api_errors.append({f"{component.get('name', None)}": "нет external_name у интерфейса"})
                                 # structurizr_identifier = component.get('properties', {}).get('structurizr.dsl.identifier', None)
                                 # if structurizr_identifier:
                                 #     structurizr_identifier = structurizr_identifier.split('.')[-1]
@@ -678,13 +678,13 @@ def check_api(cmdb: str, data: Dict[str, Any], backend_url: str,
                 if responsibility["responsibility"]:
                     capability_set = set()
                     for cpb in responsibility["responsibility"]:
-                        capability_set.add(cpb["code"])
+                        capability_set.add(cpb["code"].lower())
                             
                     def fix_capability(cmdb: str, capability_set : set, capability: str) -> str:
-                        if capability in capability_set:
+                        if capability.lower() in capability_set:
                             logging.warning(f"# Found capability {capability}")
                             return capability
-                        elif f"{cmdb}.{capability}" in capability_set:
+                        elif f"{cmdb}.{capability}".lower() in capability_set:
                             logging.warning(f"# Found capability {capability}")
                             logging.warning(f"# Correct capability {capability} -> {cmdb}.{capability}")
                             return f"{cmdb}.{capability}"

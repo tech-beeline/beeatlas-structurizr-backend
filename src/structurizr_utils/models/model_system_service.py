@@ -1,7 +1,6 @@
 """
 Модель для работы с API system-service v1.2.0
 Управление информацией о системах
-https://dashboard-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru/swagger-ui/system-service/swagger.json
 """
 
 import os
@@ -199,8 +198,7 @@ class SystemServiceClient:
             timeout: Таймаут запросов в секундах
             headers: Дополнительные заголовки для запросов
         """
-        self.base_url = base_url or os.getenv('SYSTEM_SERVICE_URL', 
-            'https://dashboard-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru')
+        self.base_url = base_url or os.getenv('SYSTEM_SERVICE_URL')
         
         if not self.base_url:
             raise ValueError("Base URL должен быть указан либо через параметр, либо через переменную окружения SYSTEM_SERVICE_URL")

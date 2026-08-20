@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from src_fitness_functions.beeatlas_api import get_workspace_json_cached
 from src_fitness_functions.sdk.git_utils import analyze_git_workspace
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["/api/v1/ff/git01"])
@@ -81,7 +82,8 @@ async def git01_check(
             )
         raise
 
-    git01_ok, rows_git01 = analyze_git_workspace(data, body.productCode)
+
+    git01_ok, rows_git01 = analyze_git_workspace(data = data, cmdb = body.productCode)
     return Git01Response(
         callId=body.callId,
         isCheck=git01_ok,

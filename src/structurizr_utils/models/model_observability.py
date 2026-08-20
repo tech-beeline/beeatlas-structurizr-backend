@@ -1,7 +1,7 @@
 import requests
 import base64
 """
-Класс для публикации дашбордов наблюдаемости по архитектуре в structurizr.vimpelcom.ru
+Класс для публикации дашбордов наблюдаемости по архитектуре
 """
 
 class ObservabilityClient:

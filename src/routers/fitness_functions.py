@@ -5,6 +5,7 @@ import requests
 import tempfile
 import base64
 import logging
+import subprocess
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -48,27 +49,40 @@ def publish_json_workspace(cmdb: str, workspace_id : int, structurizrApiKey : st
     log_key_milestone(f"Publishing JSON workspace for {cmdb}")
 
     try:
-        filename = tempfile.gettempdir() +f'/workspace_{cmdb}.json'
+        # Sanitize the cmdb value to avoid spaces/special chars in filename and shell commands
+        safe_cmdb = cmdb.replace(' ', '_').replace('\t', '_')
+        filename = tempfile.gettempdir() + f'/workspace_{safe_cmdb}.json'
         
         log_key_milestone(f"Writing workspace JSON to {filename}")
         
         with open(filename,'w') as f:
             f.write(json.dumps(product_json,ensure_ascii=False))
 
-        command  = "/usr/local/structurizr-cli/structurizr.sh "
-        command += "push -url "+url_onpremises_base+" "
-        command += "-id "+ str(workspace_id) + " "
-        command += "-key "+structurizrApiKey+" "
-        command += "-secret "+structurizrApiSecret+" "
-        command += "-workspace "+filename
-        command += " -merge false"
-        
         log_key_milestone(f"Executing CLI command for workspace {workspace_id}")
         
-        result = False
-        if os.system(command) == 0:
-            result = True
+        # Use subprocess.run with argument list to avoid shell word-splitting on spaces
+        command = [
+            "/usr/local/structurizr-cli/structurizr.sh",
+            "push",
+            "-url", url_onpremises_base,
+            "-id", str(workspace_id),
+            "-key", structurizrApiKey,
+            "-secret", structurizrApiSecret,
+            "-workspace", filename,
+            "-merge", "false"
+        ]
+        
+        proc = subprocess.run(command, capture_output=True, text=True)
+        result = proc.returncode == 0
+        
+        if result:
             log_key_milestone(f"CLI command successful for workspace {workspace_id}")
+        else:
+            log_key_milestone(f"CLI command failed for workspace {workspace_id} (rc={proc.returncode})", level="error")
+            if proc.stdout:
+                log_key_milestone(f"CLI stdout: {proc.stdout.strip()}")
+            if proc.stderr:
+                log_key_milestone(f"CLI stderr: {proc.stderr.strip()}")
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -513,7 +527,7 @@ def dsl2fdm(dsl_workspace : DSLWorkspace):
                 "application/json": {
                     "example": {
                         "details": "Ok",
-                        "dashboard": "https://dashboard-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru/systems/PRODUCT_CODE"
+                        "dashboard": "https://dashboard/systems/PRODUCT_CODE"
                     }
                 }
             }
@@ -698,4 +712,4 @@ def fitness_check(docId: int,pipelineId : int = 0):
         log_key_milestone(f'Body: {json.dumps(res, ensure_ascii=False)}')
         log_error_with_details(ex, "fitness_check_service_posting", {"cmdb": cmdb})
         
-    return JSONResponse(status_code=201, content={"details": "Ok","dashboard":f"https://dashboard-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru/systems/{cmdb}"})
+    return JSONResponse(status_code=201, content={"details": "Ok","dashboard":f"https://dashboard/systems/{cmdb}"})

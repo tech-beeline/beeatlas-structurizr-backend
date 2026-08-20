@@ -18,16 +18,10 @@ workspace {
     }
 
     views {
-      properties { 
-            plantuml.url "https://structurizr.vimpelcom.ru/plantuml"
-            plantuml.format "svg"
-            kroki.url "https://kroki.vimpelcom.ru/"
-            kroki.format "svg"
+      properties {
             structurizr.sort created
             structurizr.tooltips true
         }
-        
-      theme https://structurizr.vimpelcom.ru/themes/beeline.json
 
       systemContext my_system {
         include *

@@ -1,7 +1,6 @@
 """
 Модель для работы с Capability API
 Управление бизнес и техническими возможностями
-https://capability-backend-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru
 """
 
 import os
@@ -587,10 +586,7 @@ class CapabilityClient:
             headers: Дополнительные заголовки для запросов
             token: Bearer токен для аутентификации
         """
-        self.base_url = base_url or os.getenv(
-            'CAPABILITY_API_URL',
-            'https://capability-backend-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru'
-        )
+        self.base_url = base_url or os.getenv('CAPABILITY_API_URL')
         
         if not self.base_url:
             raise ValueError(

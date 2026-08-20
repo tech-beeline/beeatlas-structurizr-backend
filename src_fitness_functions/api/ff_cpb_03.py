@@ -25,10 +25,7 @@ class Cpb03Detail(BaseModel):
     code: str = Field(..., description="Код объекта проверки")
     name: str = Field(..., description="Наименование")
     source: str = Field(..., description="Источник: Structurizr / FAIL")
-    parents: List[Dict[str, str]] = Field(
-        default_factory=list,
-        description="Родительские возможности (элементы с полем code)",
-    )
+    parents: str = Field(..., description="Перечень родительских возможностей [ 'code', 'code', ... ]")
     check: bool = Field(..., description="Результат проверки")
 
 
@@ -97,11 +94,11 @@ async def cpb03_check(
                 code=full_code,
                 name=tc.name,
                 source="Structurizr",
-                parents=[
-                    {"code": str(p.get("code", "")).strip()}
+                parents=str([
+                    str(p.get("code", "")).strip()
                     for p in tc.parents
                     if str(p.get("code", "")).strip()
-                ],
+                ]),
                 check=True,
             )
         )
@@ -114,7 +111,7 @@ async def cpb03_check(
         else:
             full_code = f"{pc}.{tc.container_id}.incomplete"
         parents_list = [
-            {"code": str(p.get("code", "")).strip()}
+            str(p.get("code", "")).strip()
             for p in tc.parents
             if str(p.get("code", "")).strip()
         ]
@@ -129,7 +126,7 @@ async def cpb03_check(
                 code=full_code,
                 name=f"{tc.name}{suffix}",
                 source="Structurizr",
-                parents=parents_list,
+                parents=str(parents_list),
                 check=False,
             )
         )

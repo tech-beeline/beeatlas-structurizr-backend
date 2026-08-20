@@ -36,7 +36,7 @@ def _cmdb_in_parents(cmdb_l: str, parents: List[str]) -> bool:
 
 
 def _type_contains_k8s(node_type: Any) -> bool:
-    return "k8s" in str(node_type or "").lower()
+    return ("k8s" in str(node_type or "").lower()) or ("vm" in str(node_type or "").lower())
 
 
 def _append_dep03_children(
@@ -58,19 +58,8 @@ def _collect_dep03_rows(
     cmdb: str,
     system_modified: str,
     infra_lookup: InfraLookup,
-    *,
-    products_api_configured: bool,
 ) -> Tuple[bool, List[Dict[str, Any]]]:
-    if not products_api_configured:
-        return True, [
-            {
-                "code": "DEP.03",
-                "name": "Проверка пропущена: не задан URL_PRODUCTS",
-                "date": system_modified,
-                "status": "SKIP",
-                "check": True,
-            }
-        ]
+
 
     cmdb_l = _norm_cmdb(cmdb)
     queue: List[Dict[str, Any]] = []
@@ -81,31 +70,33 @@ def _collect_dep03_rows(
         environment = str(deployment_node.get("environment", "") or "").strip()
         if not environment:
             continue
-        parents = infra_lookup(environment)
-        if not parents:
-            logger.info("DEP.03: deployment environment не найден в CMDB: %s", environment)
-            continue
-        for child in deployment_node.get("children") or []:
-            queue.append(child)
+        queue.append(deployment_node)
+
 
     while queue:
         deployment_node = queue.pop(0)
-        if deployment_node.get("under_k8s_parent"):
-            _append_dep03_children(deployment_node, queue, under_k8s=True)
-            continue
-
         props = deployment_node.get("properties") or {}
         deployment_node_type = props.get("type")
+        deployment_host = props.get("host")
         is_k8s_type = _type_contains_k8s(deployment_node_type)
         is_has_instances = len(deployment_node.get("containerInstances") or []) > 0
         environment = str(deployment_node.get("environment", "") or "").strip()
         name = str(deployment_node.get("name", "") or "").strip()
 
-        if is_has_instances and name:
-            parents = infra_lookup(name)
+        childern = deployment_node.get("children") or []
+
+        if deployment_node.get("under_k8s_parent"):
+            _append_dep03_children(deployment_node, queue, under_k8s=True)
+            continue
+
+
+
+        if deployment_host and len(childern) == 0:
+            logging.info(f"checking host ... {deployment_host}")
+            parents = infra_lookup(deployment_host)
             label = f"Стенд {environment}, узел {name} (VM)"
             row = {
-                "code": f"vm-{environment}-{name}",
+                "code": f"{deployment_host}",
                 "name": label,
                 "date": system_modified,
             }
@@ -113,11 +104,13 @@ def _collect_dep03_rows(
                 found_rows.append({**row, "status": "OK", "check": True})
             else:
                 not_found_rows.append({**row, "status": "FAIL", "check": False})
-        elif is_k8s_type and name:
+
+        elif name and len(childern) == 0:
+            logging.info(f"checking name ... {name}")
             parents = infra_lookup(name)
-            label = f"Стенд {environment}, namespace {name} (k8s)"
+            label = f"Стенд {environment}, узел {name} (VM)"
             row = {
-                "code": f"k8s-{environment}-{name}",
+                "code": f"{name}",
                 "name": label,
                 "date": system_modified,
             }
@@ -216,14 +209,11 @@ def analyze_dep_workspace(
         ]
 
     api = get_beeatlas_api()
-    lookup = infra_lookup or api.fetch_product_infra_parents
-    products_configured = bool((os.getenv("URL_PRODUCTS") or "").strip() or api.products_base_url)
     dep03_ok, rows_dep03 = _collect_dep03_rows(
         data,
         cmdb,
         system_modified,
-        lookup,
-        products_api_configured=products_configured,
+        api.fetch_product_infra_parents,
     )
 
     return dep01_ok, dep02_ok, dep03_ok, rows_dep01, rows_dep02, rows_dep03

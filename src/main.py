@@ -234,7 +234,7 @@ if __name__ == "__main__":
     
     # Настройка логгера для роутеров
     router_logger: logging.Logger = logging.getLogger("router")
-    router_logger.setLevel(logging.INFO)
+    router_logger.setLevel(logging.DEBUG)
     
     # Создаем фильтр для исключения /actuator/prometheus из логов
     class ExcludePrometheusFilter(logging.Filter):

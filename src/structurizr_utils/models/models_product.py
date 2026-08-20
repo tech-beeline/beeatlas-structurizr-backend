@@ -6,11 +6,8 @@ import logging
 import json
 from datetime import datetime
 
-# https://fdm-products-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru/v2/api-docs
-# https://fdm-products-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru/swagger-ui/index.html
-# https://fdm-products-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru
-# URL_PRODUCT = os.getenv(key='URL_PRODUCTS', default='https://fdm-products-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru')
-URL_PRODUCT = os.getenv(key='URL_PRODUCTS', default='https://fdm-products-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru')
+
+URL_PRODUCT = os.getenv(key='URL_PRODUCTS')
 
 class ApiSecretDTO(BaseModel):
     api_secret: str
@@ -753,8 +750,7 @@ def put_product_relations(cmdb: str, relations: ProductRelationsNewRequestDTO, f
     relations_list = [relation.model_dump() for relation in relations.relations]
     json_request = json.dumps(relations_list)
 
-    # logging.info(f'# Relations list {json_request.encode(
-    #     'utf-8')}')
+    # logging.info(f"# Relations list {json_request.encode('utf-8')}")
     
     # return
     logging.info(f"PUT {url}")

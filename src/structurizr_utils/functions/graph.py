@@ -14,7 +14,7 @@ import json
 
 
 def get_token() -> str:
-    ambasador_url = os.getenv("AMBASADOR_URL","https://ambassador-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru")
+    ambasador_url = os.getenv("AMBASADOR_URL")
     url = f"{ambasador_url}/rabbit-token"
     logging.info(f"Getting token from {url}")
     response = requests.get(url, verify=False)
@@ -32,7 +32,7 @@ def send_rabbit_message_for_graph(cmdb: str, doc_id: int, token: str):
     rabbit_vhost = os.getenv("RABBIT_VHOST", "dev_host")
 
     # Устанавливаем соединение с RabbitMQ
-    hosts = os.getenv("RABBIT_HOSTS", "eafdmmart-rabbit-dev-1.arch-code.cloud.vimpelcom.ru,eafdmmart-rabbit-dev-2.arch-code.cloud.vimpelcom.ru").split(",")
+    hosts = os.getenv("RABBIT_HOSTS").split(",")
     connection = None
     for host in hosts:
         try:

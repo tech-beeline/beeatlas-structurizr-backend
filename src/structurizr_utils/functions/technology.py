@@ -20,6 +20,8 @@ from structurizr_utils.models.models_product import post_product_tech_relation
 # Настройка логгера для модуля
 logger = logging.getLogger(__name__)
 
+URL_TECHRADAR_UI = os.getenv("URL_TECHRADAR_UI")
+
 class TechStatus:
     """
     Класс для хранения статуса технологий при проверке соответствия техрадару.
@@ -154,7 +156,7 @@ def check_technology(cmdb: str, data: Dict[str, Any], backend_url: str,
     
     # Инициализация клиента техрадара
     client = TechradarClient(
-        base_url=os.environ.get("URL_TECHRADAR", "https://techradar-backend-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru"),
+        base_url=os.environ.get("URL_TECHRADAR"),
         auth_token="your_auth_token_here"
     )
 
@@ -421,7 +423,7 @@ def check_technology(cmdb: str, data: Dict[str, Any], backend_url: str,
             result.append(FitnessStatus(
                 code=technology_assessments[0]["code"],
                 isCheck=False,
-                resultDetails='У приложения есть технологии не из <a href="https://tr.vimpelcom.ru/" target="_blank">Техрадара</a>: ' + msg_techs,
+                resultDetails=f'У приложения есть технологии не из <a href="{URL_TECHRADAR_UI}" target="_blank">Техрадара</a>: ' + msg_techs,
                 assessmentDescription=technology_assessments[0]["description"],
                 assessmentObjects=[assessment_obj_tech01]
             ))

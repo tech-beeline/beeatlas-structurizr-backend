@@ -30,7 +30,7 @@ class ErrorDetail(BaseModel):
 #         model="RuadaptQwen", 
 #         temperature=0,
 #         api_key=os.getenv("OPENAI_API_KEY"),
-#         base_url="http://ta-dev.apps.yd-kt05.vimpelcom.ru/api/v1"
+#         base_url="http://ta/api/v1"
 #     )
 #     template = """
 #             Как разработчик REST API сформируй метрики для REST end-point.

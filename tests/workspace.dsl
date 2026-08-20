@@ -573,7 +573,7 @@ workspace {
                     deploymentNode "apps_frontend-arhitect-area" {
                         containerInstance BEEATLAS.container_ui
                         properties {
-                            host ui.ai.beeline.ru
+                            host ui.ai.ru
                             flavor cpu1ram2
                         }
                     }

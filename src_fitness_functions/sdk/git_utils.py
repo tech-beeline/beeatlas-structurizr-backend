@@ -91,7 +91,7 @@ def analyze_git_workspace(
     if infrastructure_techs is not None:
         infra = infrastructure_techs
     else:
-        infra = set(get_cached_infrastructure_labels())
+        infra = get_cached_infrastructure_labels()
 
     ok_rows: List[Dict[str, Any]] = []
     fail_rows: List[Dict[str, Any]] = []
@@ -103,15 +103,16 @@ def analyze_git_workspace(
         for c in s.get("containers") or []:
             if _is_external_container(c):
                 continue
+
+            cid = str(c.get("id", "") or f"container-{checked_count}")
+            cname = str(c.get("name", "") or cid)
+            repo_url = _container_repo_url(c)
             technology = str(c.get("technology", "") or "")
             if _has_infrastructure_tech(technology, infra):
                 continue
 
             checked_count += 1
-            cid = str(c.get("id", "") or f"container-{checked_count}")
-            cname = str(c.get("name", "") or cid)
-            repo_url = _container_repo_url(c)
-
+            
             if repo_url and _has_git_repo_url(repo_url):
                 ok_rows.append(
                     {

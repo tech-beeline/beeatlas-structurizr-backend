@@ -163,10 +163,7 @@ def build_tech_workspace_context(data: Dict[str, Any], cmdb: str) -> TechWorkspa
     """Разбор workspace и TechRadar для TECH.01–TECH.06."""
     ctx = TechWorkspaceContext(cmdb=cmdb, system_modified=_system_modified(data, cmdb))
     api = get_beeatlas_api()
-    if not (os.getenv("URL_TECHRADAR") or "").strip() and not api.techradar_base_url:
-        ctx.skip = True
-        ctx.skip_message = "Проверка пропущена: не задан URL_TECHRADAR"
-        return ctx
+
 
     techs, product_tech = get_cached_techradar_catalog()
     if not techs:

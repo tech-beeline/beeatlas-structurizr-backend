@@ -8,6 +8,8 @@ from typing import Dict, List, Any, Optional
 # Настройка логгера для модуля
 logger = logging.getLogger(__name__)
 
+IDM_FREEIPA_CMDB = os.getenv("IDM_FREEIPA_CMDB")
+
 def check_container(cmdb: str, data: Dict[str, Any], backend_url: str, share_url: str, publish: bool, product_id : int = -1) -> List[FitnessStatus]:
     """
     Проверяет контейнерную модель системы в нотации Structurizr DSL.
@@ -58,7 +60,7 @@ def check_container(cmdb: str, data: Dict[str, Any], backend_url: str, share_url
     logger.debug('Загрузка технологий из техрадара')
     # Инициализация клиента техрадара
     techradar_client = TechradarClient(
-        base_url=os.environ.get("URL_TECHRADAR", "https://techradar-backend-prod-eafdmmart.apps.yd-m3-k21.vimpelcom.ru"),
+        base_url=os.environ.get("URL_TECHRADAR"),
         auth_token="your_auth_token_here"
     )
     techs = techradar_client.get_all_tech(user_roles="admin")
@@ -191,8 +193,9 @@ def check_container(cmdb: str, data: Dict[str, Any], backend_url: str, share_url
         'UNIXLDAP',
         'RU.IDP.IDP-PROD',
         'IDP',
-        'RU.YDC.FREEIPA-TEST-CL01.VEGA.CLOUD.VIMPELCOM.RU'
     ]
+    if IDM_FREEIPA_CMDB:
+        idm_cmdb_list.append(IDM_FREEIPA_CMDB)
     
     for s in systems:
         cmdb_name = s.get('properties', {}).get('cmdb', '').upper()

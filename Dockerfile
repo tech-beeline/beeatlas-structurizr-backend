@@ -19,10 +19,7 @@ ENV PIP_INDEX_URL=$PIP_INDEX_URL
 ARG PIP_TRUSTED_HOST=''
 ENV PIP_TRUSTED_HOST=$PIP_TRUSTED_HOST
 COPY requirements/base.txt /opt/structurizr_backend/requirements/base.txt
-RUN python3 -m pip config --user set global.index https://nexus.vimpelcom.ru/repository/proxy__pypi__group/pypi/ && \
-    python3 -m pip config --user set global.index-url https://nexus.vimpelcom.ru/repository/proxy__pypi__group/simple/ && \
-    python3 -m pip config --user set global.trusted-host nexus.vimpelcom.ru && \
-    python3 -m pip install --no-cache-dir -r /opt/structurizr_backend/requirements/base.txt && \
+RUN python3 -m pip install --no-cache-dir -r /opt/structurizr_backend/requirements/base.txt && \
     rm -rf /root/.cache/pip && \
     rm -rf /usr/local/lib/python3.10/dist-packages/__pycache__
 

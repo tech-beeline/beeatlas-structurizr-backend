@@ -5,7 +5,7 @@ import logging
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from fastapi import HTTPException
 
-URL_DOCUMENTS = os.getenv("URL_DOCUMENTS","https://document-service-dev-eafdmmart.apps.yd-m6-kt22.vimpelcom.ru")
+URL_DOCUMENTS = os.getenv("URL_DOCUMENTS")
 
 
 # Метод GET /api/v1/documents/{id} (getDocument)

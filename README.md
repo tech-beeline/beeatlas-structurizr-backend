@@ -3,7 +3,7 @@
 ## Метаданные
 
 - Название: Structurizr Backend API — управляющий слой архитектурного конвейера VimpelCom (workspace, fitness functions, terraform, интеграции).
-- Точка входа: [`src/main.py`](src/main.py), порт `8080`, контейнер собирается из [`Dockerfile`](Dockerfile) (Ubuntu 22.04 + JDK 21 + Python 3.10 + Structurizr CLI `v2025.11.09`).
+- Точка входа: [`src/main.py`](src/main.py), порт `8080`, контейнер собирается из [`Dockerfile`](Dockerfile) (Ubuntu 22.04 + JDK 21 JRE + Python 3.10 + Graphviz + Structurizr CLI `v2025.11.09`).
 - Связанные требования: автоматизация цикла `DSL → JSON → Document Service → Structurizr On-Premises → Fitness Functions → Sparx/FF Manager → Terraform/Vega VPS`; экспорт SLA из OpenAPI/WSDL/Proto; HMAC-SHA256 аутентификация для Structurizr On-Premises и FDM Gateway.
 - **Структура документа (REASON Canvas):** разделы **R** (Requirements), **E** (Entities), **A** (Approach), **S** (Structure), **O** (Operations), **N** (Norms) и блок **Safeguards** — согласованное описание требований к сервису, контрактов, кода и эксплуатации.
 
@@ -34,17 +34,18 @@
 
 Перечень проверяемых функций (через [`safe_execution`](src/structurizr_utils/functions/objects.py)):
 
-| Код | Категория | Реализация |
-|-----|-----------|------------|
-| `EA-0001` | Соответствие IP-адресации сетевым политикам | [`ea_0001.py`](src/structurizr_utils/functions/ea_0001.py) |
-| `CTX.01-03` | Контекстные диаграммы | [`context.py`](src/structurizr_utils/functions/context.py) |
-| `CPB.01-05` | Business / Tech Capability | [`capability.py`](src/structurizr_utils/functions/capability.py) |
-| `TECH.01-06` | Соответствие технологий TechRadar | [`technology.py`](src/structurizr_utils/functions/technology.py) |
-| `SQ.01-02` | Sequence-диаграммы | [`sequences.py`](src/structurizr_utils/functions/sequences.py) |
-| `DEP.01-04` | Diagram размещения | [`deployment.py`](src/structurizr_utils/functions/deployment.py) |
-| `CNT.01-03` | Контейнерная модель | [`container.py`](src/structurizr_utils/functions/container.py) |
-| `ADR.01` | Архитектурные решения | [`adr.py`](src/structurizr_utils/functions/adr.py) |
-| `API.01-03` | API / SLA | [`api.py`](src/structurizr_utils/functions/api.py) |
+| Код | Категория | Реализация | Примечание |
+|-----|-----------|------------|------------|
+| `EA-0001` | Соответствие IP-адресации сетевым политикам | [`ea_0001.py`](src/structurizr_utils/functions/ea_0001.py) | Только в локальном прогоне `/api/v1/fitness-function/local/{docId}` |
+| `CTX.01-03` | Контекстные диаграммы | [`context.py`](src/structurizr_utils/functions/context.py) | |
+| `CPB.01-05` | Business / Tech Capability | [`capability.py`](src/structurizr_utils/functions/capability.py) | |
+| `TECH.01-06` | Соответствие технологий TechRadar | [`technology.py`](src/structurizr_utils/functions/technology.py) | |
+| `SQ.01-02` | Sequence-диаграммы | [`sequences.py`](src/structurizr_utils/functions/sequences.py) | |
+| `DEP.01-04` | Diagram размещения | [`deployment.py`](src/structurizr_utils/functions/deployment.py) | |
+| `CNT.01-03` | Контейнерная модель | [`container.py`](src/structurizr_utils/functions/container.py) | Включает также GIT.01 и SEC.01 |
+| `ADR.01` | Архитектурные решения | [`adr.py`](src/structurizr_utils/functions/adr.py) | |
+| `API.01-03` | API / SLA | [`api.py`](src/structurizr_utils/functions/api.py) | |
+| `PAT.01` | Архитектурные паттерны / антипаттерны | [`patterns.py`](src/structurizr_utils/functions/patterns.py) | Проверяет `db_link` и другие антипаттерны через Graph Service |
 
 
 ### `/api/v1/ff` — FF Manager-совместимые эндпоинты (пакет [`src_fitness_functions/`](src_fitness_functions/))
@@ -292,13 +293,11 @@ sequenceDiagram
 | Путь | Назначение |
 |------|------------|
 | [`Dockerfile`](Dockerfile) | Production-образ: Ubuntu 22.04 + JDK 21 JRE + Python 3.10 + Graphviz + Structurizr CLI `v2025.11.09`. `CMD ["python3", "/opt/structurizr_backend/src/main.py"]`. |
-| [`Dockerfile.test`](Dockerfile.test) | То же базовое содержимое, но `ENTRYPOINT ["/usr/bin/bash"]` — для ручных smoke и интеграционных тестов внутри контейнера. |
-| [`docker-compose.yml`](docker-compose.yml) | Поднимает контейнер `structurizr_backend` с пробросом `8080:8080`, монтированием рабочей копии и `env_file: ".env_dev"`. |
+| [`docker-compose.yml`](docker-compose.yml) | Поднимает контейнер `structurizr_backend` с пробросом `8080:8080`, монтированием рабочей копии, использует `Dockerfile` (через `Dockerfile.test`) и `env_file: ".env_dev"`. |
 | [`requirements/base.txt`](requirements/base.txt) | Python-зависимости (FastAPI 0.133, Uvicorn 0.35, Pydantic 2.12 + pydantic-settings 2.10, requests 2.32, Jinja2 3.1, PyYAML 6.0, zeep 4.2, pycamunda 0.6, psycopg2-binary 2.9, prometheus_client 0.21, PyJWT 2.10, pika 1.3, graphviz2drawio 1.1). |
 | [`requirements/dev.txt`](requirements/dev.txt) | Зависимости для тестов и локальной разработки с полным импортом `main`: `base.txt` (частично продублировано с ослабленными пинами под Python 3.13) + `pytest`, `pytest-cov`, `httpx`, `python-dotenv`. |
 | [`pytest.ini`](pytest.ini) | Конфигурация pytest: `testpaths=tests`, маркер `integration`. |
-| [`.env`](.env), [`.env_dev`](.env_dev) | URL внешних систем и пароли. Не коммитить реальные секреты. |
-| [`install_cert.sh`](install_cert.sh) | Установка корпоративных корневых сертификатов в системный bundle (для прокси/MITM-инспекции). |
+| `.env`, `.env_dev` | URL внешних систем и пароли. Не коммитить реальные секреты. Файлы не включены в репозиторий — создаются локально на основе окружения. |
 | [`certs/`](certs/) | PEM/CRT для встройки в Docker-образ (`update-ca-certificates`). |
 | [`templates/`](templates/) | Jinja2-шаблоны: `workspace.dsl`, `terraform/main.jinja`. |
 | [`tests/`](tests/) | Автоматические тесты на pytest + `TestClient` и ручной интеграционный скрипт `run_conversion2doc_fdm.py`. См. подробности ниже. |
@@ -323,11 +322,11 @@ sequenceDiagram
 
 | Файл/папка | Назначение |
 |------------|------------|
-| [`main.py`](src/main.py) | Точка входа: создание `FastAPI`, Prometheus middleware, добавление корня репозитория в `sys.path`, подключение роутеров (`workspace`, `fitness_functions`, `terraform`, `integraion`, `ff_health_router`, роутеры `ff_*` из `src_fitness_functions/api/` — ADR, CPB, CNT, CTX, DEP, API, TECH и др.), кастомный обработчик `RequestValidationError`, кастомизация OpenAPI, фильтр логов `uvicorn.access` для `/actuator/prometheus`. `uvicorn.run(app, host="0.0.0.0", port=8080)`. |
+| [`main.py`](src/main.py) | Точка входа: создание `FastAPI`, Prometheus middleware (`http_requests_total`, `http_request_duration_seconds`), добавление корня репозитория в `sys.path`, подключение 4 основных роутеров (`workspace`, `fitness_functions`, `terraform`, `integraion`) и 25 роутеров `ff_*` из `src_fitness_functions/api/` (health, ADR, API, CNT, CPB, CTX, DEP, EA, GIT, SQ, TECH), кастомный обработчик `RequestValidationError`, кастомизация OpenAPI, фильтр логов `uvicorn.access` для `/actuator/prometheus`. `uvicorn.run(app, host="0.0.0.0", port=8080)`. |
 | [`structurizr.py`](src/structurizr.py) | Низкоуровневый клиент Structurizr On-Premises: HMAC-SHA256, `load_workspace`, `post_workspace`, `get_workspaces`, `get_workspace_cmdb`. ENV: `URL_ONPREMISES_BASE`, `URL_ONPREMISES_WORKSPACE`, `ONPREMISES_PASSWORD`. |
 | [`routers/__init__.py`](src/routers/__init__.py) | Декораторы и хелперы логирования: `log_endpoint_call`, `log_key_milestone`, `log_error_with_details`, `log_function_entry/exit`, `log_http_request/response`. |
 | [`routers/workspace.py`](src/routers/workspace.py) | Эндпоинты `/workspace`, `/api/v1/workspace`, `/api/v1/workspace/validate`, `/api/v1/workspace/conversion`, `/api/v1/workspace/conversion2doc`. |
-| [`routers/fitness_functions.py`](src/routers/fitness_functions.py) | `/api/v1/workspace/{docId}`, `/api/v1/workspace/{docId}/fdm`, `/api/v1/dsl2fdm`, `/api/v1/fitness-function/local/{docId}`; helper `publish_json_workspace`. |
+| [`routers/fitness_functions.py`](src/routers/fitness_functions.py) | `/api/v1/workspace/{docId}`, `/api/v1/workspace/{docId}/fdm`, `/api/v1/dsl2fdm`, `/api/v1/fitness-function/local/{docId}`; helper `publish_json_workspace`. Включает вызовы проверок: `check_context`, `check_capability`, `check_technology`, `check_sequences`, `check_deployment`, `check_container`, `check_adr`, `check_api`, `check_patterns`. Дополнительно в локальном прогоне — `check_ea_0001` (см. [`fitness_check.md`](fitness_check.md)). |
 | [`routers/terraform.py`](src/routers/terraform.py) | `GET /api/v1/workspace/{docId}/terraform`, `POST /api/v1/workspace/terraform/generate`; генерация HCL через шаблон + VegaVPS клиент. |
 | [`routers/integraion.py`](src/routers/integraion.py) | `POST /api/v1/integration/sla` (REST/WSDL/Proto через `ApiLoader`). Имя файла содержит опечатку (`integraion` вместо `integration`) — исторически. |
 | [`routers/utils.py`](src/routers/utils.py) | `decode_base64`, `convert_dsl2json` (через Structurizr CLI subprocess), типы `DSLWorkspace`, `ValidationError`, `ErrorDetail`. |
@@ -338,7 +337,7 @@ sequenceDiagram
 | Путь | Назначение |
 |------|------------|
 | [`__init__.py`](src_fitness_functions/__init__.py) | Маркер пакета. |
-| [`main.py`](src_fitness_functions/main.py) | Standalone-запуск этого пакета на `8080` (для разработки без основного `src/main.py`). В прод-пути **не импортируется**. |
+| [`main.py`](src_fitness_functions/main.py) | Standalone-запуск этого пакета на `8080` (для разработки без основного `src/main.py`). Регистрирует только `health` и `ff_adr_01` роутеры. В прод-пути **не импортируется** — все `ff_*` роутеры подключаются в [`src/main.py`](src/main.py). |
 | [`config.py`](src_fitness_functions/config.py) | `Settings(BaseSettings)` — `gateway_url`, `api_key`, `api_secret`. Читает `.env`/`.env_dev` через `SettingsConfigDict(env_file=..., extra="ignore")`. |
 | [`beeatlas_api.py`](src_fitness_functions/beeatlas_api.py) | Единая точка **исходящего HTTP** для FF-пакета: Document Service, Capability/Products API, TechRadar (`fetch_all_tech`, `fetch_product_tech`, `fetch_techradar_infrastructure_labels`), произвольные GET для спецификаций; `get_beeatlas_api()`, `get_workspace_json_cached`. |
 | [`api/document_cache.py`](src_fitness_functions/api/document_cache.py) | Кеш workspace по `docId` (TTL 15 мин, read-through); внутри вызывает `BeeAtlasAPI.get_workspace_document`. |
@@ -465,7 +464,7 @@ flowchart TB
     ```
     Скрипт делает `POST /api/v1/workspace/conversion2doc`, забирает `doc_id`, затем `POST /api/v1/fitness-function/local/{doc_id}?pipelineId=90011`.
 
-5. **Сертификаты корпоративного PKI:** перед сборкой положить нужные `.crt` в [`certs/`](certs/) — образ выполняет `update-ca-certificates`. Для локального хоста — [`install_cert.sh`](install_cert.sh).
+5. **Сертификаты корпоративного PKI:** перед сборкой положить нужные `.crt` в [`certs/`](certs/) — образ выполняет `update-ca-certificates`. Для локального хоста рекомендуется выполнить `sudo update-ca-certificates` после установки корпоративного корневого сертификата.
 
 6. **Изменение списка fitness functions:** для агрегированного прогона — добавить файл в [`src/structurizr_utils/functions/`](src/structurizr_utils/functions/), импортировать в `routers/fitness_functions.py`, дописать вызов в `safe_execution(...)`. Для отдельного эндпоинта FF Manager — добавить `src_fitness_functions/api/ff_*.py`, подключить роутер в [`src/main.py`](src/main.py). Новый исходящий HTTP из `src_fitness_functions` — только через [`beeatlas_api.py`](src_fitness_functions/beeatlas_api.py) (или `HTTPClient` для Gateway), см. раздел **N**. Обновить таблицы в этом README (раздел **R** и при необходимости **E** / **S**).
 

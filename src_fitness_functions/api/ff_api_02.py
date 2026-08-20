@@ -24,7 +24,6 @@ class Api02Detail(BaseModel):
     """Один элемент в списке деталей."""
     code: str = Field(..., description="Код объекта проверки")
     name: str = Field(..., description="Наименование")
-    date: str = Field(..., description="Дата (при наличии)")
     status: str = Field(..., description="Статус")
     check: bool = Field(..., description="Результат проверки")
     rps: Optional[float] = Field(default=None, description="RPS метода, если задан")
