@@ -176,7 +176,7 @@ class DiscoveredParameter(BaseModel):
 
 
 class DiscoveredInterface(BaseModel):
-    apiId: int
+    apiId: Optional[int]
     apiLink: Optional[str] = None
     connectedInterface: Optional['Interface'] = None
     connectionInterfaceId: Optional[int] = None
@@ -184,7 +184,7 @@ class DiscoveredInterface(BaseModel):
     createdDate: Optional[str] = None
     deletedDate: Optional[str] = None
     description: Optional[str] = None
-    externalId: int
+    externalId: str
     id: int
     name: Optional[str] = None
     operations: List[DiscoveredOperation]
