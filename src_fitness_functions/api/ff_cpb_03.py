@@ -137,7 +137,7 @@ async def cpb03_check(
                 code="CPB.03",
                 name=f"Отсутствуют описанные technical capability для системы cmdb={pc}",
                 source="FAIL",
-                parents=[],
+                parents=str([]),
                 check=False,
             )
         )

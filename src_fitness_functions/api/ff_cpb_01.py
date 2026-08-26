@@ -139,7 +139,7 @@ async def cpb01_check(
                 code="CPB.01",
                 name="Для системы нет capability ни в Structurizr, ни в landscape",
                 source="FAIL",
-                parents=[],
+                parents=str([]),
                 check=False,
             )
         )
