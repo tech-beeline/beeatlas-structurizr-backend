@@ -207,6 +207,38 @@
 
 ---
 
+## 10. Customer Journey (`cx.py`)
+
+Проверки CX.01–CX.03 выполняются **по модели** (`model.people`, `model.softwareSystems[].containers[]`),
+а не по View. Логика — [`src_fitness_functions/sdk/cx_utils.py`](src_fitness_functions/sdk/cx_utils.py);
+«признак UI» у Person — любая relationship к целевой SoftwareSystem или её контейнеру (в любом направлении).
+
+### CX.01 — Взаимодействие пользователя с системой
+- **Описание:** существует Person со связью (в любом направлении) к целевой системе или её контейнерам.
+- **Успех:** есть хотя бы один UI-Person (по строке на Person).
+- **Неуспех:** нет персон со связью с системой или её контейнерами; либо система не найдена по `productCode`.
+
+### CX.02 — Технологии UI
+- **Описание:** среди контейнеров целевой системы, связанных с Person, есть контейнер, в `technology`
+  которого встречается label из фиксированного списка UI-технологий `_FRONTEND_LABELS`
+  (источник — export_technology xlsx, сектора «Языки» и «Фреймворки и инструменты»):
+  `HTML`, `CSS`, `JavaScript`, `TypeScript`, `jQuery`, `React`, `React Native`, `Angular`, `Vue`,
+  `Next.js`, `GatsbyJS`, `Remix`, `Eleventy`, `Webpack`, `Node.js`, `Jest`, `devexpress`,
+  `Swift`, `Objective-C`, `Kotlin`.
+- **Успех:** есть person-related контейнер с UI-технологией; либо person-related контейнеров нет
+  (проверка не требовалась, `check: true`).
+- **Неуспех:** person-related контейнеры есть, но ни у одного нет UI-технологий.
+
+### CX.03 — TC со связкой к шагам Customer Journey
+- **Описание:** у контейнеров, связанных с Person, есть внутренние component `type=capability` (TC).
+  Связка TC с шагами Customer Journey — **заглушка (TO-DO)** в `cx_utils._match_cj_steps`; наличие TC
+  проверяется по-настоящему.
+- **Успех:** есть TC в person-related контейнерах; либо person-related контейнеров нет
+  (проверка не требовалась, `check: true`).
+- **Неуспех:** person-related контейнеры есть, но TC нет.
+
+---
+
 ## Структура результата проверки
 
 Каждая проверка возвращает `FitnessStatus`:
