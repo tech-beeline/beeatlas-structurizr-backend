@@ -21,10 +21,19 @@ class TestFfAdr01:
         assert data["countDetail"] == 0
         assert "Not implemented" in data["details"]
 
-    def test_returns_200_when_doc_id_provided(self, client: TestClient) -> None:
+    def test_returns_200_when_doc_id_provided(self, client: TestClient, document_store) -> None:
+        ws = {
+            "model": {"properties": {"workspace_cmdb": "fdmshowcaseapp"}},
+            "documentation": {
+                "decisions": [
+                    {"id": "1", "title": "ADR 1", "date": "2026-01-01", "status": "Accepted"}
+                ]
+            },
+        }
+        doc_id = document_store.upload(ws)
         call_id = str(uuid.uuid4())
         body = {"callId": call_id, "productCode": "FDMSHOWCASEAPP"}
-        response = client.post(self.URL, params={"docId": 1}, json=body)
+        response = client.post(self.URL, params={"docId": doc_id}, json=body)
         assert response.status_code == 200, response.text
         data = response.json()
         assert data["callId"] == call_id
@@ -35,25 +44,10 @@ class TestFfAdr01:
         first = data["details"][0]
         assert {"code", "name", "date", "status", "check"} <= set(first.keys())
 
-    def test_returns_404_when_gateway_says_not_found(
-        self,
-        client: TestClient,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """Когда HTTPClient бросает NotFoundError — отдаём 404 с FF-форматом ответа."""
-        from src_fitness_functions.sdk.exceptions import NotFoundError
-
-        class _Raising:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def get(self, *args, **kwargs):
-                raise NotFoundError("not found")
-
-        monkeypatch.setattr("src_fitness_functions.api.ff_adr_01.HTTPClient", _Raising)
-
-        body = {"callId": str(uuid.uuid4()), "productCode": "UNKNOWN"}
-        response = client.post(self.URL, params={"docId": 1}, json=body)
+    def test_returns_404_when_document_not_found(self, client: TestClient) -> None:
+        """Когда документа нет в Document Service — отдаём 404 с FF-форматом ответа."""
+        body = {"callId": str(uuid.uuid4()), "productCode": "FDMSHOWCASEAPP"}
+        response = client.post(self.URL, params={"docId": 999999}, json=body)
         assert response.status_code == 404, response.text
         data = response.json()
         assert data["isCheck"] is False

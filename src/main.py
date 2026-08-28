@@ -38,6 +38,9 @@ from src_fitness_functions.api import (
     ff_ctx_01 as ff_ctx_01_router,
     ff_ctx_02 as ff_ctx_02_router,
     ff_ctx_03 as ff_ctx_03_router,
+    ff_cx_01 as ff_cx_01_router,
+    ff_cx_02 as ff_cx_02_router,
+    ff_cx_03 as ff_cx_03_router,
     ff_dep_01 as ff_dep_01_router,
     ff_dep_02 as ff_dep_02_router,
     ff_dep_03 as ff_dep_03_router,
@@ -163,6 +166,9 @@ app.include_router(ff_cpb_05_router.router)  # CPB.05 — качество оп�
 app.include_router(ff_ctx_01_router.router)  # CTX.01 — создана диаграмма контекста
 app.include_router(ff_ctx_02_router.router)  # CTX.02 — связи на контексте подписаны
 app.include_router(ff_ctx_03_router.router)  # CTX.03 — связи на контексте с технологией взаимодействия
+app.include_router(ff_cx_01_router.router)  # CX.01 — взаимодействие пользователя с системой
+app.include_router(ff_cx_02_router.router)  # CX.02 — технологии UI (список label из export_technology)
+app.include_router(ff_cx_03_router.router)  # CX.03 — TC в контейнерах, связанных с Person; связка с шагами CJ — заглушка
 app.include_router(ff_dep_01_router.router)  # DEP.01 — есть хотя бы один Deployment Environment
 app.include_router(ff_dep_02_router.router)  # DEP.02 — есть хотя бы одна deployment-диаграмма
 app.include_router(ff_dep_03_router.router)  # DEP.03 — DeploymentEnvironment ссылается на CMDB

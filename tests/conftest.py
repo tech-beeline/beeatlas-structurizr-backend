@@ -42,7 +42,7 @@ os.environ.setdefault("GATEWAY_URL", "https://gateway.test")
 os.environ.setdefault("URL_BEEATLAS", "https://beeatlas.test")
 os.environ.setdefault("URL_TCQUALITY", "https://tcquality.test")
 os.environ.setdefault("RABBIT_HOSTS", "rabbit.test")
-os.environ.setdefault("IDM_FREEIPA_CMDB")
+os.environ.setdefault("IDM_FREEIPA_CMDB", "")
 os.environ.setdefault("API_KEY", "test-api-key")
 os.environ.setdefault("API_SECRET", "test-api-secret")
 # Явно гасим URL_SPARX, чтобы не уходить в Sparx из fitness_check.
@@ -82,7 +82,19 @@ def project_root() -> Path:
 
 @pytest.fixture(scope="session")
 def workspace_json() -> Dict[str, Any]:
-    """Фикстурный workspace.json из tests/ (источник для подмены CLI-конвертации)."""
+    """Фикстурный workspace.json из tests/ (источник для подмены CLI-конвертации).
+
+    Если ``tests/workspace.json`` не сгенерирован — возвращает минимальную модель
+    (только ``workspace_cmdb``), чтобы сессионный setUp не падал на FileNotFoundError.
+    """
+    if not WORKSPACE_JSON_PATH.exists():
+        return {
+            "model": {
+                "properties": {"workspace_cmdb": "fdmshowcaseapp"},
+                "people": [],
+                "softwareSystems": [],
+            }
+        }
     with open(WORKSPACE_JSON_PATH, encoding="utf-8") as f:
         return json.load(f)
 
@@ -132,6 +144,20 @@ class FakeDocumentStore:
 @pytest.fixture
 def document_store() -> FakeDocumentStore:
     return FakeDocumentStore()
+
+
+@pytest.fixture(autouse=True)
+def _clear_document_cache() -> None:
+    """Сброс глобального read-through кеша workspace-документов между тестами.
+
+    ``document_store`` — функция-scoped (id начинаются с 1000 в каждом тесте),
+    поэтому без очистки кеша по ``doc_id`` следующий тест получил бы чужой документ.
+    """
+    from src_fitness_functions.api import document_cache
+
+    document_cache._cache.clear()
+    yield
+    document_cache._cache.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -300,8 +326,6 @@ def patch_external_services(
 
         def post(self, path: str, data=None, **kwargs):
             return {"status": "ok"}
-
-    monkeypatch.setattr("src_fitness_functions.api.ff_adr_01.HTTPClient", FakeHTTPClient)
 
     return {
         "document_store": document_store,

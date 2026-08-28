@@ -70,6 +70,9 @@
 | POST | `/api/v1/ff/ctx01` | CTX.01 — есть `systemContextView` для системы с `properties.cmdb` = `productCode`. |
 | POST | `/api/v1/ff/ctx02` | CTX.02 — у связей системы на контексте задано `description` (если диаграммы нет — проверка не требуется, `isCheck: true`). |
 | POST | `/api/v1/ff/ctx03` | CTX.03 — у связей задана `technology`; в деталях — `target_name` и `technology`. |
+| POST | `/api/v1/ff/cx01` | CX.01 — взаимодействие пользователя с системой: Person со связью к SoftwareSystem/Container (по модели). |
+| POST | `/api/v1/ff/cx02` | CX.02 — технологии UI: person-related контейнер с технологией из списка UI-label (`cx_utils._FRONTEND_LABELS`). |
+| POST | `/api/v1/ff/cx03` | CX.03 — TC (component `type=capability`) в контейнерах, связанных с Person; связка TC с шагами Customer Journey — заглушка/TBD. |
 | POST | `/api/v1/ff/dep01` | DEP.01 — есть Deployment Environment (`deploymentNodes[].environment`). |
 | POST | `/api/v1/ff/dep02` | DEP.02 — есть deployment-диаграмма (`deploymentViews`). |
 | POST | `/api/v1/ff/dep03` | DEP.03 — узлы развёртывания сверяются с CMDB (Products API, `URL_PRODUCTS`). |
@@ -162,6 +165,10 @@
 #### CTX.01–CTX.03 ([`src_fitness_functions/api/ff_ctx_01.py`](src_fitness_functions/api/ff_ctx_01.py) … [`ff_ctx_03.py`](src_fitness_functions/api/ff_ctx_03.py))
 
 Контракт как у ADR/CNT: `callId`, `productCode`, `docId`. Детали — `code`, `name`, `date` (`properties.modified` системы), `status`, `check`. Разбор workspace — [`sdk/context_utils.py`](src_fitness_functions/sdk/context_utils.py) (без `structurizr_utils`). **CTX.01** — по одной строке на каждый `systemContextView` (`code` = `key` диаграммы). **CTX.02** / **CTX.03** — по каждой связи целевой системы на контекстной диаграмме: сначала строки с `check: true` (есть `description` / `technology`), затем с `check: false`; у **CTX.03** в деталях — `target_name` и `technology` (найденное значение из связи). При отсутствии контекстной диаграммы CTX.02/03 возвращают одну сводную строку `check: true` (связи не анализируются, как в `check_context`).
+
+#### CX.01–CX.03 ([`src_fitness_functions/api/ff_cx_01.py`](src_fitness_functions/api/ff_cx_01.py) … [`ff_cx_03.py`](src_fitness_functions/api/ff_cx_03.py))
+
+Контракт как у ADR/CTX: `callId`, `productCode`, `docId`. Проверки проводятся **по модели** (`model.people`, `model.softwareSystems[].containers[]`), без анализа View. Разбор workspace — [`sdk/cx_utils.py`](src_fitness_functions/sdk/cx_utils.py). «Признак UI» у Person — любая relationship к целевой SoftwareSystem или её контейнеру (в любом направлении: person→system/container, system→person, container→person). **CX.01** — по одной строке на каждый UI-Person (`code` = id Person). **CX.02** — по одному контейнеру, связанному с Person, у которого `technology` содержит label из фиксированного списка UI-технологий `_FRONTEND_LABELS` (источник — export_technology xlsx: React, Angular, Vue, Next.js, HTML, CSS, JavaScript, TypeScript и др.); в деталях дополнительно поле `technology`. **CX.03** — по одному компоненту `type=capability` (TC) в контейнерах, связанных с Person; `code` — полный код `CMDB.код`; связка TC с шагами Customer Journey — заглушка (TO-DO в `cx_utils._match_cj_steps`), наличие TC проверяется по-настоящему. Если person-related контейнеров нет, CX.02/CX.03 возвращают одну сводную строку `check: true` «проверка не требовалась»; если система не найдена по `productCode` — FAIL-строка «Система не найдена по productCode».
 
 #### DEP.01–DEP.03 ([`src_fitness_functions/api/ff_dep_01.py`](src_fitness_functions/api/ff_dep_01.py) … [`ff_dep_03.py`](src_fitness_functions/api/ff_dep_03.py))
 
@@ -349,6 +356,8 @@ sequenceDiagram
 | [`sdk/api_utils.py`](src_fitness_functions/sdk/api_utils.py) | API.01–API.03 по workspace; загрузка спецификаций по URL через `BeeAtlasAPI` внутри `ApiSpecLoader`. |
 | [`sdk/context_utils.py`](src_fitness_functions/sdk/context_utils.py) | CTX.01–CTX.03: `systemContextViews` и связи целевой softwareSystem по `productCode` (как [`context.py`](src/structurizr_utils/functions/context.py)). |
 | [`api/ff_ctx_01.py`](src_fitness_functions/api/ff_ctx_01.py) … [`ff_ctx_03.py`](src_fitness_functions/api/ff_ctx_03.py) | `POST /api/v1/ff/ctx01` … `ctx03`; workspace через `get_workspace_json_cached`. |
+| [`sdk/cx_utils.py`](src_fitness_functions/sdk/cx_utils.py) | CX.01–CX.03: UI-Person, person-related контейнеры, TC (по модели, без views; `_FRONTEND_LABELS` — список UI-технологий). |
+| [`api/ff_cx_01.py`](src_fitness_functions/api/ff_cx_01.py) … [`ff_cx_03.py`](src_fitness_functions/api/ff_cx_03.py) | `POST /api/v1/ff/cx01` … `cx03`; workspace через `get_workspace_json_cached`. |
 | [`sdk/deployment_utils.py`](src_fitness_functions/sdk/deployment_utils.py) | DEP.01–DEP.03: `deploymentNodes`, `deploymentViews`, сверка с CMDB (как [`deployment.py`](src/structurizr_utils/functions/deployment.py)). |
 | [`api/ff_dep_01.py`](src_fitness_functions/api/ff_dep_01.py) … [`ff_dep_03.py`](src_fitness_functions/api/ff_dep_03.py) | `POST /api/v1/ff/dep01` … `dep03`; workspace через `get_workspace_json_cached`. |
 | [`sdk/git_utils.py`](src_fitness_functions/sdk/git_utils.py) | GIT.01: git/nexus/harbor URL контейнеров (как GIT.01 в [`container.py`](src/structurizr_utils/functions/container.py)). |
